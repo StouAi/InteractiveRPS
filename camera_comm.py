@@ -51,15 +51,6 @@ def finger_combo(lmlist):
         print(finger_statuses)
         return "Unknown"
 
-    # # Scissors
-    # finglist = []
-    # if lmlist[12][1] < lmlist[10][1] and lmlist[8][1] < lmlist[6][1]:
-    #     finglist.append("Scissors")
-    #     return "Scissors"
-    # elif lmlist[12][1] < lmlist[10][1] and lmlist[8][1] < lmlist[6][1]:
-    # 
-    # else:
-    #     return "No gesture"
 
 
 def check_locked_gesture(past_gestures, limit=60):
