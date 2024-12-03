@@ -18,6 +18,8 @@ num = 0
 np.random.seed(0)
 font = cv.FONT_HERSHEY_PLAIN
 
+countdown = 3
+
 
 def is_finger_closed(finger_list, direction=1, axis=1):
     return direction * finger_list[1][axis] < direction * finger_list[3][axis]
@@ -110,6 +112,7 @@ _bot_choice = None
 player_choice = None
 player_score = 0
 bot_score = 0
+added_scores = False
 
 while True:
     success, img = cap.read()
@@ -130,15 +133,22 @@ while True:
     cTime = time.time()
     fps = 1 / (cTime - pTime)
     pTime = cTime
-    if 0<time.time() - start_time<5:
-        cv.putText(img, f"Game starting in {4-int(time.time() - start_time)}", (50, 150), font, 3, (137, 0, 255), 2)  
-    if time.time() - start_time > 5:
+    if 0<time.time() - start_time<countdown:
+        cv.putText(img, f"Game starting in {countdown-1-int(time.time() - start_time)}", (50, 150), font, 3, (137, 0, 255), 2)  
+    if time.time() - start_time > countdown:
         if not _bot_choice:
             _bot_choice = bot_choice()
-        if not player_choice:
+        if not player_choice or player_choice == "Unknown":
             player_choice = check_locked_gesture(past_gestures, limit=5)
         if player_choice and player_choice != "Restart" and player_choice != "Unknown":
+            
             winner = check_winner(player_choice, _bot_choice)
+            if not added_scores:
+                if winner == "Player":
+                    player_score += 1
+                elif winner == "Bot":
+                    bot_score += 1
+                added_scores = True
             cv.putText(img, f"P: {player_choice}", (200, 120), font, 2, (137, 0, 255), 2)
             cv.putText(img, f"B: {_bot_choice}", (200, 170), font, 2, (137, 0, 255), 2)
             if winner == "Draw":
@@ -147,9 +157,12 @@ while True:
                 cv.putText(img, f"Winner: {winner}", (50, 250), font, 5, (137, 0, 255), 2)
 
 
+
     # if time.time() - start_time > 10:
     if check_locked_gesture(past_gestures, limit=5) == "Restart":
         _bot_choice = None
+        player_choice = None
+        added_scores = False
         start_time = time.time()
         past_gestures = []
         counter = 0
@@ -158,6 +171,8 @@ while True:
 
         
         cv.putText(img, _bot_choice, (250, 150), font, 3, (137, 0, 255), 2)
+    cv.putText(img, f"Player: {player_score}", (50, 350), font, 2, (137, 0, 255), 2)
+    cv.putText(img, f"Bot: {bot_score}", (50, 400), font, 2, (137, 0, 255), 2)
     cv.putText(img, f'FPS: {int(fps)}', (50, 50), font, 2, (137, 0, 255), 2)
     cv.imshow('Image', img)
     key = cv.waitKey(1)
