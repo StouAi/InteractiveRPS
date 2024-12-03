@@ -108,6 +108,9 @@ past_gestures = []
 start_time = time.time()
 _bot_choice = None
 player_choice = None
+player_score = 0
+bot_score = 0
+
 while True:
     success, img = cap.read()
     img = detector.findHands(img)
