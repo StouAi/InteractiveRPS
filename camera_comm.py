@@ -31,6 +31,12 @@ def get_closed_fingers(lmlist, direction=1, axis=1):
         [17, 18, 19, 20]
     ]
 
+    if (lmlist[0][axis]-lmlist[9][axis])>0:
+        direction = 1
+    else:
+        direction = -1
+    
+
     finger_statuses = []
     for finger, indices in enumerate(finger_indexes):
         status = is_finger_closed([lmlist[x] for x in indices], direction=direction, axis=axis)
@@ -120,9 +126,21 @@ while True:
     # cv.putText(img, "yolo", (150, 150), cv.FONT_HERSHEY_PLAIN, 2, (137, 0, 255), 2)
     if 0<time.time() - start_time<5:
         cv.putText(img, f"Game starting in {4-int(time.time() - start_time)}", (50, 150), font, 3, (137, 0, 255), 2)  
-    if 10>time.time() - start_time > 5:
+    if 100>time.time() - start_time > 5:
         if not _bot_choice:
             _bot_choice = bot_choice()
+        
+        if check_locked_gesture(past_gestures, limit=5):
+            player_choice = check_locked_gesture(past_gestures, limit=5)
+            winner = play_round(player_choice, _bot_choice)
+            cv.putText(img, f"Winner: {winner}", (50, 250), font, 5, (137, 0, 255), 2)
+            # _bot_choice = None
+            # start_time = time.time()
+            # past_gestures = []
+            # counter = 0
+            # fingerlist = []
+            # inputlist = []
+
         
         cv.putText(img, _bot_choice, (250, 150), font, 3, (137, 0, 255), 2)
     cv.putText(img, f'FPS: {int(fps)}', (50, 50), font, 2, (137, 0, 255), 2)
