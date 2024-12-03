@@ -119,12 +119,12 @@ while True:
     pTime = cTime
     # cv.putText(img, "yolo", (150, 150), cv.FONT_HERSHEY_PLAIN, 2, (137, 0, 255), 2)
     if 0<time.time() - start_time<5:
-        cv.putText(img, f"Game starting in {4-int(time.time() - start_time)}", (150, 150), font, 5, (137, 0, 255), 2)  
+        cv.putText(img, f"Game starting in {4-int(time.time() - start_time)}", (50, 150), font, 3, (137, 0, 255), 2)  
     if 10>time.time() - start_time > 5:
         if not _bot_choice:
             _bot_choice = bot_choice()
         
-        cv.putText(img, _bot_choice, (150, 150), font, 2, (137, 0, 255), 2)
+        cv.putText(img, _bot_choice, (250, 150), font, 3, (137, 0, 255), 2)
     cv.putText(img, f'FPS: {int(fps)}', (50, 50), font, 2, (137, 0, 255), 2)
     cv.imshow('Image', img)
     key = cv.waitKey(1)
