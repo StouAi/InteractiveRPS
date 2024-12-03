@@ -55,6 +55,9 @@ def finger_combo(lmlist):
 
     elif finger_statuses == [False, False, False, False]:
         return "Paper"
+    
+    elif finger_statuses == [False, True, True, False]:
+        return "Restart"
     else:
         print(finger_statuses)
         return "Unknown"
@@ -126,20 +129,26 @@ while True:
     # cv.putText(img, "yolo", (150, 150), cv.FONT_HERSHEY_PLAIN, 2, (137, 0, 255), 2)
     if 0<time.time() - start_time<5:
         cv.putText(img, f"Game starting in {4-int(time.time() - start_time)}", (50, 150), font, 3, (137, 0, 255), 2)  
-    if 100>time.time() - start_time > 5:
+    if time.time() - start_time > 5:
         if not _bot_choice:
             _bot_choice = bot_choice()
         
-        if check_locked_gesture(past_gestures, limit=5):
-            player_choice = check_locked_gesture(past_gestures, limit=5)
-            winner = play_round(player_choice, _bot_choice)
+        player_choice = check_locked_gesture(past_gestures, limit=5)
+        if player_choice and player_choice != "Restart" and player_choice != "Unknown":
+            winner = check_winner(player_choice, _bot_choice)
+            cv.putText(img, f"P: {player_choice}", (150, 150), font, 2, (137, 0, 255), 2)
+            cv.putText(img, f"B: {_bot_choice}", (150, 200), font, 2, (137, 0, 255), 2)
             cv.putText(img, f"Winner: {winner}", (50, 250), font, 5, (137, 0, 255), 2)
-            # _bot_choice = None
-            # start_time = time.time()
-            # past_gestures = []
-            # counter = 0
-            # fingerlist = []
-            # inputlist = []
+
+
+    # if time.time() - start_time > 10:
+    if check_locked_gesture(past_gestures, limit=5) == "Restart":
+        _bot_choice = None
+        start_time = time.time()
+        past_gestures = []
+        counter = 0
+        fingerlist = []
+        inputlist = []
 
         
         cv.putText(img, _bot_choice, (250, 150), font, 3, (137, 0, 255), 2)
