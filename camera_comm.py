@@ -59,7 +59,7 @@ def finger_combo(lmlist):
     elif finger_statuses == [False, True, True, False]:
         return "Restart"
     else:
-        print(finger_statuses)
+        # print(finger_statuses)
         return "Unknown"
 
 
@@ -107,6 +107,7 @@ counter = 0
 past_gestures = []
 start_time = time.time()
 _bot_choice = None
+player_choice = None
 while True:
     success, img = cap.read()
     img = detector.findHands(img)
@@ -118,27 +119,29 @@ while True:
         fingerlist.append(fingerpos1)
         past_gestures.append(fingerpos1)
 
-        if counter % 10 == 0:
-            print(check_locked_gesture(past_gestures, limit = 5))
+        # if counter % 10 == 0:
+        #     print(check_locked_gesture(past_gestures, limit = 5))
 
         # print(fingerpos1)
 
     cTime = time.time()
     fps = 1 / (cTime - pTime)
     pTime = cTime
-    # cv.putText(img, "yolo", (150, 150), cv.FONT_HERSHEY_PLAIN, 2, (137, 0, 255), 2)
     if 0<time.time() - start_time<5:
         cv.putText(img, f"Game starting in {4-int(time.time() - start_time)}", (50, 150), font, 3, (137, 0, 255), 2)  
     if time.time() - start_time > 5:
         if not _bot_choice:
             _bot_choice = bot_choice()
-        
-        player_choice = check_locked_gesture(past_gestures, limit=5)
+        if not player_choice:
+            player_choice = check_locked_gesture(past_gestures, limit=5)
         if player_choice and player_choice != "Restart" and player_choice != "Unknown":
             winner = check_winner(player_choice, _bot_choice)
-            cv.putText(img, f"P: {player_choice}", (150, 150), font, 2, (137, 0, 255), 2)
-            cv.putText(img, f"B: {_bot_choice}", (150, 200), font, 2, (137, 0, 255), 2)
-            cv.putText(img, f"Winner: {winner}", (50, 250), font, 5, (137, 0, 255), 2)
+            cv.putText(img, f"P: {player_choice}", (200, 120), font, 2, (137, 0, 255), 2)
+            cv.putText(img, f"B: {_bot_choice}", (200, 170), font, 2, (137, 0, 255), 2)
+            if winner == "Draw":
+                cv.putText(img, "Draw", (200, 250), font, 5, (137, 0, 255), 2)
+            else:
+                cv.putText(img, f"Winner: {winner}", (50, 250), font, 5, (137, 0, 255), 2)
 
 
     # if time.time() - start_time > 10:
