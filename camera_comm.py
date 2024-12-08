@@ -21,11 +21,20 @@ font = cv.FONT_HERSHEY_PLAIN
 countdown = 3
 
 
-def is_finger_closed(finger_list, direction=1, axis=1):
-    return direction * finger_list[1][axis] < direction * finger_list[3][axis]
+def is_finger_closed(finger_list, wrist):
+    
+    vector1 = np.array(finger_list[1]) - np.array(wrist)
+    vector2 = np.array(finger_list[3]) - np.array(finger_list[1])
+    dot = np.dot(vector1, vector2)
+    mag1 = np.linalg.norm(vector1)
+    mag2 = np.linalg.norm(vector2)
+    cos_theta = dot / (mag1 * mag2)
+    return cos_theta < 0
+    
+    # return direction * finger_list[1][axis] < direction * finger_list[3][axis]
 
 
-def get_closed_fingers(lmlist, direction=1, axis=1):
+def get_closed_fingers(lmlist):
     finger_indexes = [
         [5, 6, 7, 8],
         [9, 10, 11, 12],
@@ -33,22 +42,18 @@ def get_closed_fingers(lmlist, direction=1, axis=1):
         [17, 18, 19, 20]
     ]
 
-    if (lmlist[0][axis]-lmlist[9][axis])>0:
-        direction = 1
-    else:
-        direction = -1
     
 
     finger_statuses = []
     for finger, indices in enumerate(finger_indexes):
-        status = is_finger_closed([lmlist[x] for x in indices], direction=direction, axis=axis)
+        status = is_finger_closed([lmlist[x] for x in indices], wrist = lmlist[0])
         finger_statuses.append(status)
-
+    
     return finger_statuses
 
 
 def finger_combo(lmlist):
-    finger_statuses = get_closed_fingers(lmlist, 1, 1)
+    finger_statuses = get_closed_fingers(lmlist)
 
     if finger_statuses == [False, False, True, True]:
         return "Scissors"
@@ -61,7 +66,6 @@ def finger_combo(lmlist):
     elif finger_statuses == [False, True, True, False]:
         return "Restart"
     else:
-        # print(finger_statuses)
         return "Unknown"
 
 
@@ -125,21 +129,23 @@ while True:
         fingerlist.append(fingerpos1)
         past_gestures.append(fingerpos1)
 
-        # if counter % 10 == 0:
-        #     print(check_locked_gesture(past_gestures, limit = 5))
 
-        # print(fingerpos1)
 
     cTime = time.time()
     fps = 1 / (cTime - pTime)
     pTime = cTime
-    if 0<time.time() - start_time<countdown:
-        cv.putText(img, f"Game starting in {countdown-1-int(time.time() - start_time)}", (50, 150), font, 3, (137, 0, 255), 2)  
+
+
+    if time.time() - start_time<countdown:
+        cv.putText(img, f"Game starting in {countdown-1-int(time.time() - start_time)}", (50, 150), font, 3, (137, 0, 255), 2) 
+
     if time.time() - start_time > countdown:
         if not _bot_choice:
             _bot_choice = bot_choice()
+
         if not player_choice or player_choice == "Unknown":
             player_choice = check_locked_gesture(past_gestures, limit=5)
+
         if player_choice and player_choice != "Restart" and player_choice != "Unknown":
             
             winner = check_winner(player_choice, _bot_choice)
@@ -158,7 +164,7 @@ while True:
 
 
 
-    # if time.time() - start_time > 10:
+    
     if check_locked_gesture(past_gestures, limit=5) == "Restart":
         _bot_choice = None
         player_choice = None
