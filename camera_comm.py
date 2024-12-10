@@ -109,78 +109,87 @@ def play_round(player_choice, bot_choice):
     return winner
 
 
-counter = 0
-past_gestures = []
-start_time = time.time()
-_bot_choice = None
-player_choice = None
-player_score = 0
-bot_score = 0
-added_scores = False
 
-while True:
-    success, img = cap.read()
-    img = detector.findHands(img)
-    lmlist = detector.findPosition(img, draw=False)
+def main():
+    counter = 0
+    past_gestures = []
+    start_time = time.time()
+    pTime =0
+    _bot_choice = None
+    player_choice = None
+    player_score = 0
+    bot_score = 0
+    added_scores = False
 
-    if len(lmlist) != 0:
-        counter += 1
-        fingerpos1 = finger_combo(lmlist)
-        fingerlist.append(fingerpos1)
-        past_gestures.append(fingerpos1)
+    while True:
+        success, img = cap.read()
+        img = detector.findHands(img)
+        lmlist = detector.findPosition(img, draw=False)
 
-
-
-    cTime = time.time()
-    fps = 1 / (cTime - pTime)
-    pTime = cTime
-
-
-    if time.time() - start_time<countdown:
-        cv.putText(img, f"Game starting in {countdown-1-int(time.time() - start_time)}", (50, 150), font, 3, (137, 0, 255), 2) 
-
-    if time.time() - start_time > countdown:
-        if not _bot_choice:
-            _bot_choice = bot_choice()
-
-        if not player_choice or player_choice == "Unknown":
-            player_choice = check_locked_gesture(past_gestures, limit=5)
-
-        if player_choice and player_choice != "Restart" and player_choice != "Unknown":
-            
-            winner = check_winner(player_choice, _bot_choice)
-            if not added_scores:
-                if winner == "Player":
-                    player_score += 1
-                elif winner == "Bot":
-                    bot_score += 1
-                added_scores = True
-            cv.putText(img, f"P: {player_choice}", (200, 120), font, 2, (137, 0, 255), 2)
-            cv.putText(img, f"B: {_bot_choice}", (200, 170), font, 2, (137, 0, 255), 2)
-            if winner == "Draw":
-                cv.putText(img, "Draw", (200, 250), font, 5, (137, 0, 255), 2)
-            else:
-                cv.putText(img, f"Winner: {winner}", (50, 250), font, 5, (137, 0, 255), 2)
+        if len(lmlist) != 0:
+            counter += 1
+            fingerpos1 = finger_combo(lmlist)
+            fingerlist.append(fingerpos1)
+            past_gestures.append(fingerpos1)
 
 
 
-    
-    if check_locked_gesture(past_gestures, limit=5) == "Restart":
-        _bot_choice = None
-        player_choice = None
-        added_scores = False
-        start_time = time.time()
-        past_gestures = []
-        counter = 0
-        fingerlist = []
-        inputlist = []
+        cTime = time.time()
+        fps = 1 / (cTime - pTime)
+        pTime = cTime
+
+
+        if time.time() - start_time<countdown:
+            cv.putText(img, f"Game starting in {countdown-1-int(time.time() - start_time)}", (50, 150), font, 3, (137, 0, 255), 2) 
+
+        if time.time() - start_time > countdown:
+            if not _bot_choice:
+                _bot_choice = bot_choice()
+
+            if not player_choice or player_choice == "Unknown":
+                player_choice = check_locked_gesture(past_gestures, limit=5)
+
+            if player_choice and player_choice != "Restart" and player_choice != "Unknown":
+                
+                winner = check_winner(player_choice, _bot_choice)
+                if not added_scores:
+                    if winner == "Player":
+                        player_score += 1
+                    elif winner == "Bot":
+                        bot_score += 1
+                    added_scores = True
+                cv.putText(img, f"P: {player_choice}", (200, 120), font, 2, (137, 0, 255), 2)
+                cv.putText(img, f"B: {_bot_choice}", (200, 170), font, 2, (137, 0, 255), 2)
+                if winner == "Draw":
+                    cv.putText(img, "Draw", (200, 250), font, 5, (137, 0, 255), 2)
+                else:
+                    cv.putText(img, f"Winner: {winner}", (50, 250), font, 5, (137, 0, 255), 2)
+
+
 
         
-        cv.putText(img, _bot_choice, (250, 150), font, 3, (137, 0, 255), 2)
-    cv.putText(img, f"Player: {player_score}", (50, 350), font, 2, (137, 0, 255), 2)
-    cv.putText(img, f"Bot: {bot_score}", (50, 400), font, 2, (137, 0, 255), 2)
-    cv.putText(img, f'FPS: {int(fps)}', (50, 50), font, 2, (137, 0, 255), 2)
-    cv.imshow('Image', img)
-    key = cv.waitKey(1)
-    if key == ord('v'):
-        break
+        if check_locked_gesture(past_gestures, limit=5) == "Restart":
+            _bot_choice = None
+            player_choice = None
+            added_scores = False
+            start_time = time.time()
+            past_gestures = []
+            counter = 0
+            fingerlist = []
+            inputlist = []
+
+            
+            cv.putText(img, _bot_choice, (250, 150), font, 3, (137, 0, 255), 2)
+        cv.putText(img, f"Player: {player_score}", (50, 350), font, 2, (137, 0, 255), 2)
+        cv.putText(img, f"Bot: {bot_score}", (50, 400), font, 2, (137, 0, 255), 2)
+        cv.putText(img, f'FPS: {int(fps)}', (50, 50), font, 2, (137, 0, 255), 2)
+        # cv.imshow('Image', img)
+        key = cv.waitKey(1)
+        if key == ord('v'):
+            break
+
+        return img
+
+
+if __name__ == "__main__":
+    main()

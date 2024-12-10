@@ -2,7 +2,10 @@ import cv2
 import numpy as np
 import pygame as pg
 import time
+import camera_comm as cc
 
+np.random.seed(0)
+font = cv2.FONT_HERSHEY_PLAIN
 
 class GUI:
     def __init__(self, width, height, title):
@@ -174,11 +177,27 @@ def game_screen(gui):
         return 'exit'
 
     running = True
+    counter = 0
+    past_gestures = []
+    start_time = time.time()
+    countdown = 3
+    pTime = 0
+    _bot_choice = None
+    player_choice = None
+    player_score = 0
+    bot_score = 0
+    added_scores = False
+
     while running:
-        ret, frame = cap.read()
+        ret, img = cap.read()
         if not ret:
             print("Error: Failed to capture video.")
             break
+
+        img = cv2.flip(img, 1)  # Reverse the image horizontally
+        
+        img = cc.detector.findHands(img)
+        lmlist = cc.detector.findPosition(img, draw=False)
 
         for event in pg.event.get():
             if event.type == pg.QUIT:  # Quit event
@@ -186,6 +205,16 @@ def game_screen(gui):
             elif event.type == pg.KEYDOWN:
                 if event.key == pg.K_q:  # Press 'Q' to quit
                     running = False
+        
+        if len(lmlist) != 0:
+            counter += 1
+            fingerpos1 = cc.finger_combo(lmlist)
+            cc.fingerlist.append(fingerpos1)
+            past_gestures.append(fingerpos1)
+        
+        cTime = time.time()
+        fps = 1 / (cTime - pTime)
+        pTime = cTime
 
         # Draw the background
         gui.screen.blit(home_screen, [0, 0])
@@ -196,8 +225,55 @@ def game_screen(gui):
         # add "vs" title.
         add_title(gui, title = "vs", pos = (gui.width//2, gui.height//2), font_size=50)
         
+        if time.time() - start_time<countdown: # TODO add this to general gui
+            cv2.putText(img, f"Game starting in {countdown-1-int(time.time() - start_time)}", (50, 150), font, 3, (137, 0, 255), 2) 
+
+        if time.time() - start_time > countdown:
+            if not _bot_choice:
+                _bot_choice = cc.bot_choice()
+
+            if not player_choice or player_choice == "Unknown":
+                player_choice = cc.check_locked_gesture(past_gestures, limit=5)
+
+            if player_choice and player_choice != "Restart" and player_choice != "Unknown":
+                
+                winner = cc.check_winner(player_choice, _bot_choice)
+                if not added_scores:
+                    if winner == "Player":
+                        player_score += 1
+                    elif winner == "Bot":
+                        bot_score += 1
+                    added_scores = True
+                cv2.putText(img, f"P: {player_choice}", (200, 120), font, 2, (137, 0, 255), 2) # TODO add this to general gui
+                cv2.putText(img, f"B: {_bot_choice}", (200, 170), font, 2, (137, 0, 255), 2) # TODO add this to general gui
+                if winner == "Draw":
+                    cv2.putText(img, "Draw", (200, 250), font, 5, (137, 0, 255), 2) # TODO add this to general gui
+                else:
+                    cv2.putText(img, f"Winner: {winner}", (50, 250), font, 5, (137, 0, 255), 2) # TODO add this to general gui
+
+
+
+        
+        if cc.check_locked_gesture(past_gestures, limit=5) == "Restart":
+            _bot_choice = None
+            player_choice = None
+            added_scores = False
+            start_time = time.time()
+            past_gestures = []
+            counter = 0
+            fingerlist = []
+            inputlist = []
+
+            
+            cv2.putText(img, _bot_choice, (250, 150), font, 3, (137, 0, 255), 2)
+        cv2.putText(img, f"Player: {player_score}", (50, 350), font, 2, (137, 0, 255), 2)
+        cv2.putText(img, f"Bot: {bot_score}", (50, 400), font, 2, (137, 0, 255), 2)
+        cv2.putText(img, f'FPS: {int(fps)}', (50, 50), font, 2, (137, 0, 255), 2)
+        # cv.imshow('Image', img)
+
         # Display the webcam feed
-        add_camera(gui, frame)
+        img = cv2.flip(img, 1)  # Reverse the image horizontally
+        add_camera(gui, img)
         
         # Display bot choice
         
