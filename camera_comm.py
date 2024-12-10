@@ -65,6 +65,10 @@ def finger_combo(lmlist):
     
     elif finger_statuses == [False, True, True, False]:
         return "Restart"
+
+    elif finger_statuses == [True, False, True, True]:
+        return "Explicit"
+
     else:
         return "Unknown"
 
@@ -149,7 +153,7 @@ def main():
             if not player_choice or player_choice == "Unknown":
                 player_choice = check_locked_gesture(past_gestures, limit=5)
 
-            if player_choice and player_choice != "Restart" and player_choice != "Unknown":
+            if player_choice and player_choice != "Restart" and player_choice != "Unknown" and player_choice != "Explicit":
                 
                 winner = check_winner(player_choice, _bot_choice)
                 if not added_scores:
@@ -166,6 +170,8 @@ def main():
                     cv.putText(img, f"Winner: {winner}", (50, 250), font, 5, (137, 0, 255), 2)
 
 
+        # if check_locked_gesture(past_gestures, limit=5) == "Explicit":
+        #     explicit = cv.imgread("explicit.png")
 
         
         if check_locked_gesture(past_gestures, limit=5) == "Restart":

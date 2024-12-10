@@ -232,10 +232,10 @@ def game_screen(gui):
             if not _bot_choice:
                 _bot_choice = cc.bot_choice()
 
-            if not player_choice or player_choice == "Unknown":
+            if not player_choice or player_choice == "Unknown" or player_choice == "Explicit":
                 player_choice = cc.check_locked_gesture(past_gestures, limit=5)
 
-            if player_choice and player_choice != "Restart" and player_choice != "Unknown":
+            if player_choice and player_choice != "Restart" and player_choice != "Unknown" and player_choice != "Explicit":
                 
                 winner = cc.check_winner(player_choice, _bot_choice)
                 if not added_scores:
@@ -252,7 +252,30 @@ def game_screen(gui):
                     cv2.putText(img, f"Winner: {winner}", (50, 250), font, 5, (137, 0, 255), 2) # TODO add this to general gui
 
 
+        if cc.check_locked_gesture(past_gestures, limit=5) == "Explicit":
+            # print("Explicit gesture detected")
+            explicit = cv2.imread("explicit.png")
+            finger_size = np.sqrt((lmlist[12][1]- lmlist[9][1])**2 + (lmlist[12][2]- lmlist[9][2])**2)
+            scale_factor = explicit.shape[0] / finger_size
+            explicit_size = [int(explicit.shape[1] / scale_factor), int(explicit.shape[0] / scale_factor)]
+            # explicit_size = [120, 75]
+            
+            explicit = cv2.resize(explicit, explicit_size)
 
+
+            coords = lmlist[11][1], lmlist[11][2]
+            coords = [int(coords[0] - explicit_size[0]//2), int(coords[1] - explicit_size[1]//2)]
+            x, y = coords[0], coords[1]
+            y_limit = min(y+explicit_size[1], img.shape[0])
+            x_limit = min(x+explicit_size[0], img.shape[1])
+            img[y:y_limit, x:x_limit] = explicit[:y_limit-y, :x_limit-x] 
+
+
+
+
+            
+
+            
         
         if cc.check_locked_gesture(past_gestures, limit=5) == "Restart":
             _bot_choice = None
