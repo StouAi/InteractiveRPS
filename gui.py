@@ -178,7 +178,6 @@ def game_screen(gui):
         ret, frame = cap.read()
         if not ret:
             print("Error: Failed to capture video.")
-            break
 
         for event in pg.event.get():
             if event.type == pg.QUIT:  # Quit event
