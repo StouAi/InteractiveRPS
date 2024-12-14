@@ -224,6 +224,11 @@ def game_screen(gui):
         # add "vs" title.
         add_title(gui, title = "vs", pos = (gui.width//2, gui.height//2), font_size=50)
         
+        # add player and player's score title.
+        add_title(gui, title = "Player's score: ", pos = (gui.width//2 +300, gui.height//2 + 200), font_size=50)
+        add_title(gui, title = str(player_score), pos = (gui.width//2+500, gui.height//2 + 200), font_size=50)
+
+        
         if time.time() - start_time<countdown: # TODO add this to general gui
             cv2.putText(img, f"Game starting in {countdown-1-int(time.time() - start_time)}", (50, 150), font, 3, (137, 0, 255), 2) 
 
