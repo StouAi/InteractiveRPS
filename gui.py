@@ -187,8 +187,34 @@ def game_screen(gui):
     player_score = 0
     bot_score = 0
     added_scores = False
+    bot_animation_flag = True
+    
+    
+    # Load images
+    images = [
+        pg.image.load("rock.png"),
+        pg.image.load("paper.png"),
+        pg.image.load("scissors.png"),
+        pg.image.load("rock_lose.png"),
+        pg.image.load("paper_lose.png"),
+        pg.image.load("scissors_lose.png"),
+        pg.image.load("rock_win.png"),
+        pg.image.load("paper_win.png"),
+        pg.image.load("scissors_win.png")
+    ]
+    
+    # Scale images to fit desired size
+    images = [pg.transform.scale(img, (350, 350)) for img in images]
+
+    # Dictionary to map choices to images
+    bot_choice_images = {
+        "Rock": images[0],
+        "Paper": images[1],
+        "Scissors": images[2]
+    }
 
     while running:
+        
         ret, img = cap.read()
         if not ret:
             print("Error: Failed to capture video.")
@@ -231,7 +257,7 @@ def game_screen(gui):
         # add player's choice title.
         
         # Display the animation
-        add_bot_animation(gui)
+        add_bot_animation(gui, bot_animation_flag)
         
         # add bot and bot's score title.
         add_title(gui, title = "Bot's score: ", pos = (gui.width//2 - 400, gui.height//2 + 200), font_size=50)
@@ -241,6 +267,7 @@ def game_screen(gui):
             cv2.putText(img, f"Game starting in {countdown-1-int(time.time() - start_time)}", (50, 150), font, 3, (137, 0, 255), 2) 
 
         if time.time() - start_time > countdown:
+            bot_animation_flag = True
             if not _bot_choice:
                 _bot_choice = cc.bot_choice()
 
@@ -248,11 +275,17 @@ def game_screen(gui):
                 player_choice = cc.check_locked_gesture(past_gestures, limit=5)
 
             if player_choice and player_choice != "Restart" and player_choice != "Unknown" and player_choice != "Explicit":
-                
+                #Display Bot choice
+                if _bot_choice in bot_choice_images:
+                    bot_choice_image = bot_choice_images[_bot_choice]
+                    gui.screen.blit(bot_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2, 200))  
+                    bot_animation_flag = False       
+                                   
                 winner = cc.check_winner(player_choice, _bot_choice)
                 if not added_scores:
                     if winner == "Player":
                         player_score += 1
+                        bot_choice_image = bot_choice_images[_bot_choice]
                     elif winner == "Bot":
                         bot_score += 1
                     added_scores = True
@@ -297,6 +330,7 @@ def game_screen(gui):
             counter = 0
             fingerlist = []
             inputlist = []
+            bot_animation_flag = True
 
             
             cv2.putText(img, _bot_choice, (250, 150), font, 3, (137, 0, 255), 2)
@@ -339,27 +373,31 @@ def draw_border(gui, camera_surface, camera_x, camera_y):
     border_rect = pg.Rect(camera_x - 5, camera_y - 5, camera_surface.get_width() + 10, camera_surface.get_height() + 10)
     pg.draw.rect(gui.screen, (255, 255, 255), border_rect)
 
-def add_bot_animation(gui):
+def add_bot_animation(gui, flag = False):
     """Show three images sequentially every 1 second."""
-    # Load images
-    images = [
-        pg.image.load("rock.png"),
-        pg.image.load("paper.png"),
-        pg.image.load("scissors.png")
-    ]
-
-    # Scale images to fit desired size
-    images = [pg.transform.scale(img, (300, 300)) for img in images]
-
-    # Determine the current image based on time
-    elapsed_time = pg.time.get_ticks() // 500  # Convert milliseconds to seconds
-    current_image = elapsed_time % len(images)  # Cycle through the images
-
     
-    # Draw the current image
-    bot_x = gui.width // 4 - images[current_image].get_width() // 2
-    bot_y = 200
-    gui.screen.blit(images[current_image], (bot_x, bot_y))
+    if flag:
+
+        # Load images
+        images = [
+            pg.image.load("rock.png"),
+            pg.image.load("paper.png"),
+            pg.image.load("scissors.png")
+        ]
+
+        # Scale images to fit desired size
+        images = [pg.transform.scale(img, (300, 300)) for img in images]
+
+        # Determine the current image based on time
+        elapsed_time = pg.time.get_ticks() // 500  # Convert milliseconds to seconds
+        current_image = elapsed_time % len(images)  # Cycle through the images
+
+        
+        # Draw the current image
+        bot_x = gui.width // 4 - images[current_image].get_width() // 2
+        bot_y = 200
+        gui.screen.blit(images[current_image], (bot_x, bot_y))
+    
 
     
 def add_score(winner):
