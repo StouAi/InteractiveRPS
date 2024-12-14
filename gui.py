@@ -222,12 +222,20 @@ def game_screen(gui):
         add_title(gui)
         
         # add "vs" title.
-        add_title(gui, title = "vs", pos = (gui.width//2, gui.height//2), font_size=50)
+        add_title(gui, title = "vs", pos = (gui.width//2, gui.height//2+200), font_size=50)
         
         # add player and player's score title.
         add_title(gui, title = "Player's score: ", pos = (gui.width//2 +300, gui.height//2 + 200), font_size=50)
         add_title(gui, title = str(player_score), pos = (gui.width//2+500, gui.height//2 + 200), font_size=50)
 
+        # add player's choice title.
+        
+        # Display the animation
+        add_bot_animation(gui)
+        
+        # add bot and bot's score title.
+        add_title(gui, title = "Bot's score: ", pos = (gui.width//2 - 400, gui.height//2 + 200), font_size=50)
+        add_title(gui, title = str(bot_score), pos = (gui.width//2-200, gui.height//2 + 200), font_size=50)
         
         if time.time() - start_time<countdown: # TODO add this to general gui
             cv2.putText(img, f"Game starting in {countdown-1-int(time.time() - start_time)}", (50, 150), font, 3, (137, 0, 255), 2) 
@@ -248,8 +256,7 @@ def game_screen(gui):
                     elif winner == "Bot":
                         bot_score += 1
                     added_scores = True
-                cv2.putText(img, f"P: {player_choice}", (200, 120), font, 2, (137, 0, 255), 2) # TODO add this to general gui
-                cv2.putText(img, f"B: {_bot_choice}", (200, 170), font, 2, (137, 0, 255), 2) # TODO add this to general gui
+                
                 if winner == "Draw":
                     cv2.putText(img, "Draw", (200, 250), font, 5, (137, 0, 255), 2) # TODO add this to general gui
                 else:
@@ -280,12 +287,6 @@ def game_screen(gui):
             x_limit_low = max(x, 0)
             img[y_limit_low:y_limit_high, x_limit_low:x_limit_high] = explicit[:y_limit_high-y_limit_low, :x_limit_high-x_limit_low]
 
-
-
-
-            
-
-            
         
         if cc.check_locked_gesture(past_gestures, limit=5) == "Restart":
             _bot_choice = None
@@ -299,9 +300,7 @@ def game_screen(gui):
 
             
             cv2.putText(img, _bot_choice, (250, 150), font, 3, (137, 0, 255), 2)
-        cv2.putText(img, f"Player: {player_score}", (50, 350), font, 2, (137, 0, 255), 2)
-        cv2.putText(img, f"Bot: {bot_score}", (50, 400), font, 2, (137, 0, 255), 2)
-        # cv.imshow('Image', img)
+
 
         # Display the webcam feed
         img = cv2.flip(img, 1)  # Reverse the image horizontally
@@ -339,6 +338,29 @@ def draw_border(gui, camera_surface, camera_x, camera_y):
     # Draw border around the camera feed
     border_rect = pg.Rect(camera_x - 5, camera_y - 5, camera_surface.get_width() + 10, camera_surface.get_height() + 10)
     pg.draw.rect(gui.screen, (255, 255, 255), border_rect)
+
+def add_bot_animation(gui):
+    """Show three images sequentially every 1 second."""
+    # Load images
+    images = [
+        pg.image.load("rock.png"),
+        pg.image.load("paper.png"),
+        pg.image.load("scissors.png")
+    ]
+
+    # Scale images to fit desired size
+    images = [pg.transform.scale(img, (300, 300)) for img in images]
+
+    # Determine the current image based on time
+    elapsed_time = pg.time.get_ticks() // 500  # Convert milliseconds to seconds
+    current_image = elapsed_time % len(images)  # Cycle through the images
+
+    
+    # Draw the current image
+    bot_x = gui.width // 4 - images[current_image].get_width() // 2
+    bot_y = 200
+    gui.screen.blit(images[current_image], (bot_x, bot_y))
+
     
 def add_score(winner):
     if winner == "Player":
