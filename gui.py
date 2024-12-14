@@ -296,7 +296,6 @@ def game_screen(gui):
             cv2.putText(img, _bot_choice, (250, 150), font, 3, (137, 0, 255), 2)
         cv2.putText(img, f"Player: {player_score}", (50, 350), font, 2, (137, 0, 255), 2)
         cv2.putText(img, f"Bot: {bot_score}", (50, 400), font, 2, (137, 0, 255), 2)
-        cv2.putText(img, f'FPS: {int(fps)}', (50, 50), font, 2, (137, 0, 255), 2)
         # cv.imshow('Image', img)
 
         # Display the webcam feed
