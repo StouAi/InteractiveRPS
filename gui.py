@@ -85,21 +85,108 @@ class Animation:
 def load_images():
     start_button_image = pg.image.load('start_btn.jpg').convert_alpha()
     exit_button_image = pg.image.load('exit_btn.jpg').convert_alpha()
+    question_button_image = pg.image.load('question.png').convert_alpha()
+    
+    # resize question button
+    question_button_image = pg.transform.scale(question_button_image, (question_button_image.get_width()//2, question_button_image.get_height()//2))
     
     if not start_button_image or not exit_button_image:
         print("Error: Could not load images.")
         exit()
 
-    return start_button_image, exit_button_image
+    return start_button_image, exit_button_image, question_button_image
+
+def show_instructions_popup(gui):
+    """Show a pop-up window with game instructions."""
+    popup_width, popup_height = 600, 400
+    popup_x = (gui.width - popup_width) // 2
+    popup_y = (gui.height - popup_height) // 2
+
+    # Create a shadow for the popup
+    shadow_surface = pg.Surface((popup_width + 20, popup_height + 20), pg.SRCALPHA, 32)
+    shadow_surface.fill((0, 0, 0, 10))  # Black with transparency
+    gui.screen.blit(shadow_surface, (popup_x - 10, popup_y - 10))
+
+    # Create the pop-up surface with rounded corners
+    popup_surface = pg.Surface((popup_width, popup_height), pg.SRCALPHA)
+    pg.draw.rect(popup_surface, (230, 240, 255, 240), (0, 0, popup_width, popup_height), border_radius=20)  # Light blue background
+
+    # Add a border around the pop-up
+    pg.draw.rect(popup_surface, (50, 100, 200), (0, 0, popup_width, popup_height), width=4, border_radius=20)  # Blue border
+
+    # Add instructions text
+    font_size = 30
+    font = pg.font.Font('font.ttf', font_size)
+    instructions_text = [
+        "FOLLOWING THE RULES IS PART OF ANY GAME!",
+        " ",
+        " Choose Rock, Paper, or Scissors.",
+        " The bot will make its own random choice.",
+        " The winner is determined based on the rules:",
+        "   - Rock beats Scissors",
+        "   - Scissors beats Paper",
+        "   - Paper beats Rock",
+        " To restart the game, make a rock-on gesture.",
+    ]
+
+    # Display the text centered inside the pop-up
+    y_offset = 30
+    for line in instructions_text:
+        text_surface = font.render(line, True, (30, 30, 80))  # Dark blue text
+        text_rect = text_surface.get_rect(center=(popup_width // 2, y_offset))
+        popup_surface.blit(text_surface, text_rect.topleft)
+        y_offset += 40  # Move down for the next line
+
+    # Position of the close button (top-right of the pop-up)
+    close_button_x = popup_x + popup_width - 40
+    close_button_y = popup_y + 20
+
+    def draw_close_button():
+        mouse_pos = pg.mouse.get_pos()
+        button_color = (100, 150, 255) if (close_button_x <= mouse_pos[0] <= close_button_x + 20 and \
+                                           close_button_y <= mouse_pos[1] <= close_button_y + 20) else (200, 200, 255)
+        pg.draw.circle(gui.screen, button_color, (close_button_x + 10, close_button_y + 10), 10)
+        pg.draw.line(gui.screen, (255, 255, 255), (close_button_x + 5, close_button_y + 5), (close_button_x + 15, close_button_y + 15), 2)
+        pg.draw.line(gui.screen, (255, 255, 255), (close_button_x + 15, close_button_y + 5), (close_button_x + 5, close_button_y + 15), 2)
+
+    # Display the pop-up on the screen
+    gui.screen.blit(popup_surface, (popup_x, popup_y))
+    draw_close_button()
+    pg.display.update()
+
+    # Handle events for closing the pop-up
+    pop_up_running = True
+    while pop_up_running:
+        for event in pg.event.get():
+            if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                # Close the popup if the close button is clicked
+                if close_button_x <= event.pos[0] <= close_button_x + 20 and \
+                   close_button_y <= event.pos[1] <= close_button_y + 20:
+                    pop_up_running = False
+            elif event.type == pg.QUIT:
+                pop_up_running = False
+
+        # Ensure the popup and button remain visible
+        gui.screen.blit(shadow_surface, (popup_x - 10, popup_y - 10))
+        gui.screen.blit(popup_surface, (popup_x, popup_y))
+        draw_close_button()
+        pg.display.update()
+
+    # Close the popup and return to the home screen
+    pg.display.update()
 
 
+
+    
 def home_screen(gui):
     """Home screen showing the title and buttons."""
     home_screen = pg.image.load("bg.jpg").convert()
-    start_button_image, exit_button_image = load_images()
+    start_button_image, exit_button_image, question_button_image = load_images()
+
     
     start_btn = Button(640 - start_button_image.get_width() - 50, 500, start_button_image, gui.screen)
     exit_btn = Button(640 + 50, 500, exit_button_image, gui.screen)
+    question_btn = Button(940 , 600, question_button_image, gui.screen)
     
     animated_image = pg.image.load('hands.png').convert_alpha()
     animation = Animation(640 - animated_image.get_width() // 2, 150, animated_image, gui.screen)  # Position above the buttons
@@ -118,7 +205,10 @@ def home_screen(gui):
                 elif exit_btn.is_hovered(mouse_pos):  # Exit button clicked
                     running = False
                     return 'exit'
-            if start_btn.is_hovered(mouse_pos) or exit_btn.is_hovered(mouse_pos):
+                elif question_btn.is_hovered(mouse_pos):
+                    show_instructions_popup(gui)
+                    
+            if start_btn.is_hovered(mouse_pos) or exit_btn.is_hovered(mouse_pos) or question_btn.is_hovered(mouse_pos):
                 pg.mouse.set_cursor(pg.SYSTEM_CURSOR_HAND)
             else:
                 pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
@@ -131,6 +221,7 @@ def home_screen(gui):
         
         start_btn.draw()
         exit_btn.draw()
+        question_btn.draw()
         
         # Update and draw the animated image
         animation.update()
@@ -165,7 +256,6 @@ def open_camera(gui):
 
     cap.release()
     gui.close()
-
 
 def game_screen(gui):
     """Game screen to show webcam feed during the game."""
@@ -297,7 +387,7 @@ def game_screen(gui):
 
 
         if cc.check_locked_gesture(past_gestures, limit=5) == "Explicit":
-            # print("Explicit gesture detected")
+
             explicit = cv2.imread("explicit.png")
             try:
                 finger_size = np.sqrt((lmlist[12][1]- lmlist[9][1])**2 + (lmlist[12][2]- lmlist[9][2])**2)
@@ -398,8 +488,6 @@ def add_bot_animation(gui, flag = False):
         bot_y = 200
         gui.screen.blit(images[current_image], (bot_x, bot_y))
     
-
-    
 def add_score(winner):
     if winner == "Player":
         player_score += 1
@@ -422,6 +510,11 @@ def main():
     
     elif screen_status == 'exit':
         home_gui.close()
+        
+    elif screen_status == 'question':
+        # pop up window with instructions
+        print("question mark clicked")        
+        screen_status = home_screen(home_gui)   
 
 
 if __name__ == "__main__":
