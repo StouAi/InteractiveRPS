@@ -3,6 +3,7 @@ import numpy as np
 import pygame as pg
 import time
 import camera_comm as cc
+import paho.mqtt.client as mqtt_client
 
 np.random.seed(0)
 font = cv2.FONT_HERSHEY_PLAIN
