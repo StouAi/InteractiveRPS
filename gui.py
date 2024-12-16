@@ -102,10 +102,10 @@ def show_instructions_popup(gui):
     popup_x = (gui.width - popup_width) // 2
     popup_y = (gui.height - popup_height) // 2
 
-    # Create a shadow for the popup
-    shadow_surface = pg.Surface((popup_width + 20, popup_height + 20), pg.SRCALPHA, 32)
-    shadow_surface.fill((0, 0, 0, 10))  # Black with transparency
-    gui.screen.blit(shadow_surface, (popup_x - 10, popup_y - 10))
+    # # Create a shadow for the popup
+    # shadow_surface = pg.Surface((popup_width + 20, popup_height + 20), pg.SRCALPHA, 32)
+    # shadow_surface.fill((0, 0, 0, 10))  # Black with transparency
+    # gui.screen.blit(shadow_surface, (popup_x - 10, popup_y - 10))
 
     # Create the pop-up surface with rounded corners
     popup_surface = pg.Surface((popup_width, popup_height), pg.SRCALPHA)
@@ -167,7 +167,7 @@ def show_instructions_popup(gui):
                 pop_up_running = False
 
         # Ensure the popup and button remain visible
-        gui.screen.blit(shadow_surface, (popup_x - 10, popup_y - 10))
+        # gui.screen.blit(shadow_surface, (popup_x - 10, popup_y - 10))
         gui.screen.blit(popup_surface, (popup_x, popup_y))
         draw_close_button()
         pg.display.update()
