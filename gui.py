@@ -27,10 +27,11 @@ def connect_mqtt():
     client.connect(broker, port)
     return client
 
-def publish(values):
+def publish(values, message):
     client = connect_mqtt()
     # values = [1001,1,1]
     out = ",".join([str(x) for x in values])
+    out+=f",{message}"
     client.publish(topic, out)
 
 class GUI:
