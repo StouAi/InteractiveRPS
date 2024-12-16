@@ -299,7 +299,7 @@ def game_screen(gui):
     bot_score = 0
     added_scores = False
     bot_animation_flag = True
-    
+    last_explicit = time.time()
     
     # Load images
     images = [
@@ -415,7 +415,9 @@ def game_screen(gui):
         if cc.check_locked_gesture(past_gestures, limit=5) == "Explicit":
 
             explicit = cv2.imread("explicit.png")
-            publish([1001, 1, 1], "explicit")
+            if time.time() - last_explicit > 1:
+                last_explicit = time.time()
+                publish([1001, 1, 1], "explicit")
             try:
                 finger_size = np.sqrt((lmlist[12][1]- lmlist[9][1])**2 + (lmlist[12][2]- lmlist[9][2])**2)
             except IndexError:
