@@ -175,22 +175,17 @@ def show_instructions_popup(gui):
     # Close the popup and return to the home screen
     pg.display.update()
 
-
-
-    
 def home_screen(gui):
     """Home screen showing the title and buttons."""
     home_screen = pg.image.load("bg.jpg").convert()
     start_button_image, exit_button_image, question_button_image = load_images()
 
-    
     start_btn = Button(640 - start_button_image.get_width() - 50, 500, start_button_image, gui.screen)
     exit_btn = Button(640 + 50, 500, exit_button_image, gui.screen)
-    question_btn = Button(940 , 600, question_button_image, gui.screen)
+    question_btn = Button(1140 , 600, question_button_image, gui.screen)
     
     animated_image = pg.image.load('hands.png').convert_alpha()
     animation = Animation(640 - animated_image.get_width() // 2, 150, animated_image, gui.screen)  # Position above the buttons
-
 
     running = True
     while running:
@@ -230,7 +225,6 @@ def home_screen(gui):
         pg.display.update()
 
     return 'exit'
-
 
 def open_camera(gui):
     """Open webcam feed and display on the GUI."""
@@ -375,7 +369,7 @@ def game_screen(gui):
                 if not added_scores:
                     if winner == "Player":
                         player_score += 1
-                        bot_choice_image = bot_choice_images[_bot_choice]
+
                     elif winner == "Bot":
                         bot_score += 1
                     added_scores = True
