@@ -11,7 +11,7 @@ font = cv2.FONT_HERSHEY_PLAIN
 broker = 'test.mosquitto.org'
 port = 1883
 topic = "hci_2024"  
-client_id = 'rand_id' + str(np.random.randint())
+client_id = 'rand_id' + str(np.random.randint(0,1000))
 
 
 def connect_mqtt():
@@ -395,14 +395,14 @@ def game_screen(gui):
                 winner = cc.check_winner(player_choice, _bot_choice)
                 if not added_scores:
                     if winner == "Player":
-                        publish([1001])
+                        publish([1001], "win")
                         player_score += 1
 
                     elif winner == "Bot":
-                        publish([1001, 500, 1001])
+                        publish([1001, 500, 1001], "lose")
                         bot_score += 1
                     else:
-                        publish([2000])
+                        publish([2000], "draw")
                     added_scores = True
 
                 
@@ -415,7 +415,7 @@ def game_screen(gui):
         if cc.check_locked_gesture(past_gestures, limit=5) == "Explicit":
 
             explicit = cv2.imread("explicit.png")
-            publish([1001, 1, 1])
+            publish([1001, 1, 1], "explicit")
             try:
                 finger_size = np.sqrt((lmlist[12][1]- lmlist[9][1])**2 + (lmlist[12][2]- lmlist[9][2])**2)
             except IndexError:
