@@ -287,7 +287,9 @@ def game_screen(gui):
     """Game screen to show webcam feed during the game."""
     home_screen = pg.image.load("bg.jpg").convert()
     cap = cv2.VideoCapture(0)
-
+    
+    pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
+    
     if not cap.isOpened():
         print("Error: Could not open webcam.")
         return 'exit'
@@ -324,10 +326,16 @@ def game_screen(gui):
     images = [pg.transform.scale(img, (350, 350)) for img in images]
 
     # Dictionary to map choices to images
-    bot_choice_images = {
+    rps_choice_images = {
         "Rock": images[0],
         "Paper": images[1],
-        "Scissors": images[2]
+        "Scissors": images[2],
+        "Rock_lose": images[3],
+        "Paper_lose": images[4],
+        "Scissors_lose": images[5],
+        "Rock_win": images[6],
+        "Paper_win": images[7],
+        "Scissors_win": images[8]
     }
 
     while running:
@@ -399,29 +407,52 @@ def game_screen(gui):
             if player_choice and player_choice != "Restart" and player_choice != "Unknown" and player_choice != "Explicit":
                 #Display Bot choice
                 add_title(gui, title = "VS", pos = (gui.width//2, gui.height//2-100), font_size=100)
-                if _bot_choice in bot_choice_images:
-                    bot_choice_image = bot_choice_images[_bot_choice]
-                    gui.screen.blit(bot_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2, 200))  
-                    bot_animation_flag = False       
+                # if _bot_choice in bot_choice_images:
+                #     bot_choice_image = bot_choice_images[_bot_choice]
+                #     gui.screen.blit(bot_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2, 200))  
+                #     bot_animation_flag = False       
                                    
                 winner = cc.check_winner(player_choice, _bot_choice)
                 if not added_scores:
                     if winner == "Player":
-                        publish([1001], "win")
                         player_score += 1
-
+                        publish([1001], "win")
                     elif winner == "Bot":
                         publish([1001, 500, 1001], "lose")
                         bot_score += 1
                     else:
                         publish([2000], "draw")
                     added_scores = True
+                    
+                if winner == "Player":
+                    
+        
+                    bot_choice_image = rps_choice_images[_bot_choice+"_lose"]
+                    player_choice_image = rps_choice_images[player_choice+"_win"]
+                    gui.screen.blit(bot_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2 -100, 100))
+                    gui.screen.blit(player_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2+700, 100))
+                    
+                    
+
+                elif winner == "Bot":
+                    
+                    bot_choice_image = rps_choice_images[_bot_choice+"_win"]
+                    player_choice_image = rps_choice_images[player_choice+"_lose"]
+                    gui.screen.blit(bot_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2 -100, 100))
+                    gui.screen.blit(player_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2+700, 100))
+                    
+                    
+                else:
+                    
+                    bot_choice_image = rps_choice_images[_bot_choice]
+                    player_choice_image = rps_choice_images[player_choice]
+                    gui.screen.blit(bot_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2 -100, 100))
+                    gui.screen.blit(player_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2+700, 100))
+                    
+                    
+                    
 
                 
-                if winner == "Draw":
-                    cv2.putText(img, "Draw", (200, 250), font, 5, (137, 0, 255), 2) # TODO add this to general gui
-                else:
-                    cv2.putText(img, f"Winner: {winner}", (50, 250), font, 5, (137, 0, 255), 2) # TODO add this to general gui
 
 
         if cc.check_locked_gesture(past_gestures, limit=5) == "Explicit":
@@ -464,9 +495,6 @@ def game_screen(gui):
             fingerlist = []
             inputlist = []
             bot_animation_flag = True
-
-            
-            cv2.putText(img, _bot_choice, (250, 150), font, 3, (137, 0, 255), 2)
 
 
         # Display the webcam feed
