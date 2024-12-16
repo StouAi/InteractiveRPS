@@ -7,6 +7,31 @@ import camera_comm as cc
 np.random.seed(0)
 font = cv2.FONT_HERSHEY_PLAIN
 
+broker = 'test.mosquitto.org'
+port = 1883
+topic = "hci_2024"  
+client_id = 'rand_id' +str(random.random())
+
+
+def connect_mqtt():
+    def on_connect(client, userdata, flags, rc):
+        if rc == 0:
+            print("Connected to MQTT Broker!")
+        else:
+            print(f"Failed to connect, return code {rc}\n")
+
+    client = mqtt_client.Client(client_id)
+    # client.username_pw_set(username, password)  # Uncomment if username/password is required
+    client.on_connect = on_connect
+    client.connect(broker, port)
+    return client
+
+def publish(values):
+    client = connect_mqtt()
+    # values = [1001,1,1]
+    out = ",".join([str(x) for x in values])
+    client.publish(topic, out)
+
 class GUI:
     def __init__(self, width, height, title):
         pg.init()
@@ -368,11 +393,16 @@ def game_screen(gui):
                 winner = cc.check_winner(player_choice, _bot_choice)
                 if not added_scores:
                     if winner == "Player":
+                        publish([1001])
                         player_score += 1
 
                     elif winner == "Bot":
+                        publish([1001, 500, 1001])
                         bot_score += 1
+                    else:
+                        publish([2000])
                     added_scores = True
+
                 
                 if winner == "Draw":
                     cv2.putText(img, "Draw", (200, 250), font, 5, (137, 0, 255), 2) # TODO add this to general gui
