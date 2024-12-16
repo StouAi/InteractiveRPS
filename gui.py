@@ -347,6 +347,8 @@ def game_screen(gui):
             fingerpos1 = cc.finger_combo(lmlist)
             cc.fingerlist.append(fingerpos1)
             past_gestures.append(fingerpos1)
+        else:
+            past_gestures.append("Unknown")
         
         cTime = time.time()
         fps = 1 / (cTime - pTime)
@@ -415,7 +417,8 @@ def game_screen(gui):
         if cc.check_locked_gesture(past_gestures, limit=5) == "Explicit":
 
             explicit = cv2.imread("explicit.png")
-            if time.time() - last_explicit > 1:
+            if time.time() - last_explicit > 1.3:
+                # print("sent explicit"+ str(time.time()))
                 last_explicit = time.time()
                 publish([1001, 1, 1], "explicit")
             try:
