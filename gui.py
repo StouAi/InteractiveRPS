@@ -60,7 +60,6 @@ class GUI:
     def close(self):
         pg.quit()  # Quit pygame
 
-
 class Button:
     def __init__(self, x, y, image, screen):
         self.image = image
@@ -79,7 +78,6 @@ class Button:
             if self.rect.collidepoint(event.pos):
                 return True
         return False
-
 
 class Animation:
     def __init__(self, x, y, image, screen):
@@ -113,31 +111,85 @@ class Animation:
             if self.scale_factor <= 0.75:  # When the image reaches its original size, start enlarging
                 self.enlarging = True
 
-
 def load_images():
     start_button_image = pg.image.load('start_btn.jpg').convert_alpha()
     exit_button_image = pg.image.load('exit_btn.jpg').convert_alpha()
     question_button_image = pg.image.load('question.png').convert_alpha()
+    qr_button_image = pg.image.load('qr.png').convert_alpha()
     
-    # resize question button
+    # resize question button and qr button
     question_button_image = pg.transform.scale(question_button_image, (question_button_image.get_width()//2, question_button_image.get_height()//2))
-    
+    qr_button_image = pg.transform.scale(qr_button_image, (qr_button_image.get_width()//4, qr_button_image.get_height()//4))
     if not start_button_image or not exit_button_image:
         print("Error: Could not load images.")
         exit()
 
-    return start_button_image, exit_button_image, question_button_image
+    return start_button_image, exit_button_image, question_button_image, qr_button_image
 
+def show_qr_popup(gui):
+    """Show a pop-up window with QR code for the game."""
+    popup_width, popup_height = 500, 500
+    popup_x = (gui.width - popup_width) // 2
+    popup_y = (gui.height - popup_height) // 2
+    
+    # Create the pop-up surface with rounded corners
+    popup_surface = pg.Surface((popup_width, popup_height), pg.SRCALPHA)
+    pg.draw.rect(popup_surface, (230, 240, 255, 240), (0, 0, popup_width, popup_height), border_radius=20)  # Light blue background
+    
+    # Add a border around the pop-up
+    pg.draw.rect(popup_surface, (50, 100, 200), (0, 0, popup_width, popup_height), width=4, border_radius=20)  # Blue border
+    
+    # Add QR code image
+    qr_code_image = pg.image.load("scan.png").convert_alpha()
+    qr_code_image = pg.transform.scale(qr_code_image, (300, 300))
+    qr_code_x = (popup_width - qr_code_image.get_width()) // 2
+    qr_code_y = (popup_height - qr_code_image.get_height()) // 2
+    popup_surface.blit(qr_code_image, (qr_code_x, qr_code_y))
+    
+    # Position of the close button (top-right of the pop-up)
+    close_button_x = popup_x + popup_width - 40
+    close_button_y = popup_y + 20
+    
+    def draw_close_button():
+        mouse_pos = pg.mouse.get_pos()
+        button_color = (100, 150, 255) if (close_button_x <= mouse_pos[0] <= close_button_x + 20 and \
+                                           close_button_y <= mouse_pos[1] <= close_button_y + 20) else (200, 200, 255)
+        pg.draw.circle(gui.screen, button_color, (close_button_x + 10, close_button_y + 10), 10)
+        pg.draw.line(gui.screen, (255, 255, 255), (close_button_x + 5, close_button_y + 5), (close_button_x + 15, close_button_y + 15), 2)
+        pg.draw.line(gui.screen, (255, 255, 255), (close_button_x + 15, close_button_y + 5), (close_button_x + 5, close_button_y + 15), 2)
+        
+    # Display the pop-up on the screen
+    gui.screen.blit(popup_surface, (popup_x, popup_y))
+    draw_close_button()
+    pg.display.update()
+    
+    # Handle events for closing the pop-up
+    pop_up_running = True
+    while pop_up_running:
+        for event in pg.event.get():
+            if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
+                # Close the popup if the close button is clicked
+                if close_button_x <= event.pos[0] <= close_button_x + 20 and \
+                   close_button_y <= event.pos[1] <= close_button_y + 20:
+                    pop_up_running = False
+            elif event.type == pg.QUIT:
+                pop_up_running = False
+
+        # Ensure the popup and button remain visible
+        # gui.screen.blit(shadow_surface, (popup_x - 10, popup_y - 10))
+        gui.screen.blit(popup_surface, (popup_x, popup_y))
+        draw_close_button()
+        pg.display.update()
+
+    # Close the popup and return to the home screen
+    pg.display.update()
+    
+    
 def show_instructions_popup(gui):
     """Show a pop-up window with game instructions."""
     popup_width, popup_height = 600, 400
     popup_x = (gui.width - popup_width) // 2
     popup_y = (gui.height - popup_height) // 2
-
-    # # Create a shadow for the popup
-    # shadow_surface = pg.Surface((popup_width + 20, popup_height + 20), pg.SRCALPHA, 32)
-    # shadow_surface.fill((0, 0, 0, 10))  # Black with transparency
-    # gui.screen.blit(shadow_surface, (popup_x - 10, popup_y - 10))
 
     # Create the pop-up surface with rounded corners
     popup_surface = pg.Surface((popup_width, popup_height), pg.SRCALPHA)
@@ -173,6 +225,7 @@ def show_instructions_popup(gui):
     close_button_x = popup_x + popup_width - 40
     close_button_y = popup_y + 20
 
+    
     def draw_close_button():
         mouse_pos = pg.mouse.get_pos()
         button_color = (100, 150, 255) if (close_button_x <= mouse_pos[0] <= close_button_x + 20 and \
@@ -210,11 +263,12 @@ def show_instructions_popup(gui):
 def home_screen(gui):
     """Home screen showing the title and buttons."""
     home_screen = pg.image.load("bg.jpg").convert()
-    start_button_image, exit_button_image, question_button_image = load_images()
+    start_button_image, exit_button_image, question_button_image, qr_button_image = load_images()
 
     start_btn = Button(640 - start_button_image.get_width() - 50, 500, start_button_image, gui.screen)
     exit_btn = Button(640 + 50, 500, exit_button_image, gui.screen)
     question_btn = Button(1140 , 600, question_button_image, gui.screen)
+    qr_btn = Button(50 , 620, qr_button_image, gui.screen)
     
     animated_image = pg.image.load('hands.png').convert_alpha()
     animation = Animation(640 - animated_image.get_width() // 2, 150, animated_image, gui.screen)  # Position above the buttons
@@ -234,8 +288,10 @@ def home_screen(gui):
                     return 'exit'
                 elif question_btn.is_hovered(mouse_pos):
                     show_instructions_popup(gui)
+                elif qr_btn.is_hovered(mouse_pos):
+                    show_qr_popup(gui)
                     
-            if start_btn.is_hovered(mouse_pos) or exit_btn.is_hovered(mouse_pos) or question_btn.is_hovered(mouse_pos):
+            if start_btn.is_hovered(mouse_pos) or exit_btn.is_hovered(mouse_pos) or question_btn.is_hovered(mouse_pos) or qr_btn.is_hovered(mouse_pos):
                 pg.mouse.set_cursor(pg.SYSTEM_CURSOR_HAND)
             else:
                 pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
@@ -249,6 +305,7 @@ def home_screen(gui):
         start_btn.draw()
         exit_btn.draw()
         question_btn.draw()
+        qr_btn.draw()
         
         # Update and draw the animated image
         animation.update()
@@ -405,12 +462,7 @@ def game_screen(gui):
                 player_choice = cc.check_locked_gesture(past_gestures, limit=5)
 
             if player_choice and player_choice != "Restart" and player_choice != "Unknown" and player_choice != "Explicit":
-                #Display Bot choice
                 add_title(gui, title = "VS", pos = (gui.width//2, gui.height//2-100), font_size=100)
-                # if _bot_choice in bot_choice_images:
-                #     bot_choice_image = bot_choice_images[_bot_choice]
-                #     gui.screen.blit(bot_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2, 200))  
-                #     bot_animation_flag = False       
                                    
                 winner = cc.check_winner(player_choice, _bot_choice)
                 if not added_scores:
@@ -425,34 +477,23 @@ def game_screen(gui):
                     added_scores = True
                     
                 if winner == "Player":
-                    
-        
                     bot_choice_image = rps_choice_images[_bot_choice+"_lose"]
                     player_choice_image = rps_choice_images[player_choice+"_win"]
                     gui.screen.blit(bot_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2 -100, 100))
                     gui.screen.blit(player_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2+700, 100))
-                    
-                    
 
                 elif winner == "Bot":
-                    
                     bot_choice_image = rps_choice_images[_bot_choice+"_win"]
                     player_choice_image = rps_choice_images[player_choice+"_lose"]
                     gui.screen.blit(bot_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2 -100, 100))
                     gui.screen.blit(player_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2+700, 100))
                     
-                    
                 else:
-                    
                     bot_choice_image = rps_choice_images[_bot_choice]
                     player_choice_image = rps_choice_images[player_choice]
                     gui.screen.blit(bot_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2 -100, 100))
                     gui.screen.blit(player_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2+700, 100))
-                    
-                    
-                    
 
-                
 
 
         if cc.check_locked_gesture(past_gestures, limit=5) == "Explicit":
