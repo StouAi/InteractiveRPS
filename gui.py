@@ -305,6 +305,7 @@ def game_screen(gui):
     added_scores = False
     bot_animation_flag = True
     last_explicit = time.time()
+    countdown_text = ["Scissors", "Paper", "Rock"]
     
     # Load images
     images = [
@@ -363,37 +364,41 @@ def game_screen(gui):
         gui.screen.blit(home_screen, [0, 0])
         
         # add the title
-        add_title(gui)
+        # add_title(gui)
         
         # add "vs" title.
-        add_title(gui, title = "vs", pos = (gui.width//2, gui.height//2+200), font_size=50)
+        # add_title(gui, title = "vs", pos = (gui.width//2, gui.height//2+200), font_size=50)
         
         # add player and player's score title.
-        add_title(gui, title = "Player's score: ", pos = (gui.width//2 +300, gui.height//2 + 200), font_size=50)
-        add_title(gui, title = str(player_score), pos = (gui.width//2+500, gui.height//2 + 200), font_size=50)
+        add_title(gui, title = "Player's score: ", pos = (gui.width//2 +300, 50), font_size=50)
+        add_title(gui, title = str(player_score), pos = (gui.width//2+500, 50), font_size=50)
 
         # add player's choice title.
         
         # Display the animation
-        add_bot_animation(gui, bot_animation_flag)
+        # add_bot_animation(gui, bot_animation_flag)
         
         # add bot and bot's score title.
-        add_title(gui, title = "Bot's score: ", pos = (gui.width//2 - 400, gui.height//2 + 200), font_size=50)
-        add_title(gui, title = str(bot_score), pos = (gui.width//2-200, gui.height//2 + 200), font_size=50)
+        add_title(gui, title = "Bot's score: ", pos = (gui.width//2 - 400, 50), font_size=50)
+        add_title(gui, title = str(bot_score), pos = (gui.width//2-200, 50), font_size=50)
         
-        if time.time() - start_time<countdown: # TODO add this to general gui
-            cv2.putText(img, f"Game starting in {countdown-1-int(time.time() - start_time)}", (50, 150), font, 3, (137, 0, 255), 2) 
+        if time.time() - start_time < countdown:
+            add_title(gui, title = countdown_text[(countdown - int(time.time() - start_time)-1)], pos = (gui.width//2, gui.height//2-100), font_size=100)
+            
 
         if time.time() - start_time > countdown:
             bot_animation_flag = True
+            flag_count = False
             if not _bot_choice:
                 _bot_choice = cc.bot_choice()
 
             if not player_choice or player_choice == "Unknown" or player_choice == "Explicit":
+                add_title(gui, title = "Shoot!", pos = (gui.width//2, gui.height//2-100), font_size=100)
                 player_choice = cc.check_locked_gesture(past_gestures, limit=5)
 
             if player_choice and player_choice != "Restart" and player_choice != "Unknown" and player_choice != "Explicit":
                 #Display Bot choice
+                add_title(gui, title = "VS", pos = (gui.width//2, gui.height//2-100), font_size=100)
                 if _bot_choice in bot_choice_images:
                     bot_choice_image = bot_choice_images[_bot_choice]
                     gui.screen.blit(bot_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2, 200))  
@@ -483,13 +488,13 @@ def add_title(gui, title="Rock-Paper-Scissors Shoot!", pos = [640, 50], font_siz
     
 def add_camera(gui, frame):
     # Resize and draw the camera feed
-    frame = cv2.resize(frame, (450, 350))  # Resize the frame
+    frame = cv2.resize(frame, (320, 250))  # Resize the frame
     frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     frame = np.rot90(frame)
     camera_surface = pg.surfarray.make_surface(frame)
 
-    camera_x = gui.width - camera_surface.get_width() - 50
-    camera_y = 150
+    camera_x = (gui.width - camera_surface.get_width()) // 2  # Center horizontally
+    camera_y = gui.height - camera_surface.get_height() - 50  # Offset from the bottom
 
     draw_border(gui, camera_surface, camera_x, camera_y)
 
@@ -525,6 +530,8 @@ def add_bot_animation(gui, flag = False):
         bot_x = gui.width // 4 - images[current_image].get_width() // 2
         bot_y = 200
         gui.screen.blit(images[current_image], (bot_x, bot_y))
+        
+    
     
 def add_score(winner):
     if winner == "Player":
