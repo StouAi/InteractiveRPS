@@ -11,7 +11,7 @@ font = cv2.FONT_HERSHEY_PLAIN
 broker = 'test.mosquitto.org'
 port = 1883
 topic = "hci_2024"  
-client_id = 'rand_id' +str(np.random.randint(0,1000))
+client_id = 'rand_id' + str(np.random.randint())
 
 
 def connect_mqtt():
