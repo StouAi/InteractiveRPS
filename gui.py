@@ -414,6 +414,7 @@ def game_screen(gui):
         if cc.check_locked_gesture(past_gestures, limit=5) == "Explicit":
 
             explicit = cv2.imread("explicit.png")
+            publish([1001, 1, 1])
             try:
                 finger_size = np.sqrt((lmlist[12][1]- lmlist[9][1])**2 + (lmlist[12][2]- lmlist[9][2])**2)
             except IndexError:
@@ -425,16 +426,17 @@ def game_screen(gui):
             
             explicit = cv2.resize(explicit, explicit_size)
 
-
-            coords = lmlist[11][1], lmlist[11][2]
-            coords = [int(coords[0] - explicit_size[0]//2), int(coords[1] - explicit_size[1]//2)]
-            x, y = coords[0], coords[1]
-            y_limit_high = min(y+explicit_size[1], img.shape[0])
-            x_limit_high = min(x+explicit_size[0], img.shape[1])
-            y_limit_low = max(y, 0)
-            x_limit_low = max(x, 0)
-            img[y_limit_low:y_limit_high, x_limit_low:x_limit_high] = explicit[:y_limit_high-y_limit_low, :x_limit_high-x_limit_low]
-
+            try:
+                coords = lmlist[11][1], lmlist[11][2]
+                coords = [int(coords[0] - explicit_size[0]//2), int(coords[1] - explicit_size[1]//2)]
+                x, y = coords[0], coords[1]
+                y_limit_high = min(y+explicit_size[1], img.shape[0])
+                x_limit_high = min(x+explicit_size[0], img.shape[1])
+                y_limit_low = max(y, 0)
+                x_limit_low = max(x, 0)
+                img[y_limit_low:y_limit_high, x_limit_low:x_limit_high] = explicit[:y_limit_high-y_limit_low, :x_limit_high-x_limit_low]
+            except:
+                pass
         
         if cc.check_locked_gesture(past_gestures, limit=5) == "Restart":
             _bot_choice = None
