@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MQTT Web Client</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      text-align: center;
+    }
+    #messages {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      height: 200px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>MQTT Web Client</h1>
+  <p>Status: <span id="status">Disconnected</span></p>
+  <div id="messages">Messages will appear here...</div>
+
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <script>
+    const brokerUrl = "wss://labserver.sense-campus.gr:9002";
+
+    const topic = "hci_2024"; // Replace with your topic
+
+    // Connect to the broker
+    const client = mqtt.connect(brokerUrl, {rejectUnauthorized: false});
+
+    // Elements for status and messages
+    const statusSpan = document.getElementById("status");
+    const messagesDiv = document.getElementById("messages");
+
+    // On connection
+    client.on("connect", () => {
+      statusSpan.textContent = "Connected";
+      statusSpan.style.color = "green";
+      console.log("Connected to broker");
+
+      // Subscribe to a topic
+      client.subscribe(topic, (err) => {
+        if (err) {
+          console.error("Subscription error", err);
+        } else {
+          console.log(`Subscribed to topic: ${topic}`);
+        }
+      });
+    });
+
+    // On message arrival
+    client.on("message", (topic, message) => {
+      const result = message.toString().split(",").pop();
+      const values = message.toString().split(",").slice(0, -1);
+      const parsedValues = values.map(value => parseInt(value));
+      
+      let color;
+      switch(result){
+        case "win":
+          color = "green";
+          break;
+        case "lose":
+          color = "red";
+          break;
+        case "draw":
+          color = "lightblue";
+          break;
+        case "explicit":
+          color = "purple";
+          break;
+        default:
+          color = "white";
+          break;
+      }
+
+      if(!navigator.vibrate(parsedValues)){
+        console.log("Vibration not supported");
+        document.body.style.backgroundColor = "yellow";
+      } else {
+        console.log("Vibrated");
+        document.body.style.backgroundColor = color;
+      }
+      
+      const msg = `${new Date().toLocaleTimeString()} - ${topic}: ${message}`;
+      const msgElement = document.createElement("div");
+      msgElement.textContent = "Vibrated" + msg;
+      messagesDiv.appendChild(msgElement);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll to latest message
+    });
+
+    // On error
+    client.on("error", (err) => {
+      console.error("Connection error", err);
+      statusSpan.textContent = "Error";
+      statusSpan.style.color = "red";
+    });
+
+    // On disconnect
+    client.on("close", () => {
+      statusSpan.textContent = "Disconnected";
+      statusSpan.style.color = "red";
+    });
+  </script>
+</body>
+</html>
