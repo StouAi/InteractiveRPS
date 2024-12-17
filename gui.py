@@ -453,7 +453,7 @@ def game_screen(gui):
         # Easter Egg!!
         if utils.check_locked_gesture(past_gestures, limit=5) == "Explicit":
 
-            explicit = cv2.imread("explicit.png")
+            explicit = cv2.imread("images/explicit.png")
             if current_time - last_explicit_time > 1.3:
                 last_explicit_time = current_time
                 mqtt_publish([1001, 1, 1], "explicit")
@@ -462,7 +462,7 @@ def game_screen(gui):
                 finger_size = np.sqrt((landmarks[12][1]- landmarks[9][1])**2 + (landmarks[12][2]- landmarks[9][2])**2)
             except IndexError:
                 finger_size = 100
-
+            
             scale_factor = explicit.shape[0] / finger_size
             explicit_size = [int(explicit.shape[1] / scale_factor), int(explicit.shape[0] / scale_factor)]
             explicit = cv2.resize(explicit, explicit_size)
