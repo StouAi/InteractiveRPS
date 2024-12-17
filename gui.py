@@ -459,7 +459,7 @@ def game_screen(gui):
             explicit = cv2.imread("images/explicit.png")
             if current_time - last_explicit_time > 1.3:
                 last_explicit_time = current_time
-                mqtt_publish([1001, 1, 1], "explicit")
+                mqtt_publish([1001], "explicit")
 
             try:
                 finger_size = np.sqrt((landmarks[12][1]- landmarks[9][1])**2 + (landmarks[12][2]- landmarks[9][2])**2)
