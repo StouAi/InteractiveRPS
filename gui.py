@@ -24,11 +24,14 @@ def connect_mqtt():
     return client
 
 def mqtt_publish(values, message):
-    client = connect_mqtt()
-    out = ",".join([str(x) for x in values])
-    out += f",{message}"
-    client.publish(topic, out)
-
+    try:
+        client = connect_mqtt()
+        out = ",".join([str(x) for x in values])
+        out += f",{message}"
+        client.publish(topic, out)
+    except:
+        print("Mqtt error: Could not publish message.")
+        return
 
 class GUI:
     def __init__(self, width, height, title):
