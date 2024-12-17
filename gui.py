@@ -1,21 +1,12 @@
-import cv2
-import numpy as np
-import pygame as pg
-import time
-import camera_comm as cc
 import paho.mqtt.client as mqtt_client
+import pygame as pg
+import numpy as np
+import cv2, time, utils
 
-np.random.seed(0)
-font = cv2.FONT_HERSHEY_PLAIN
-
-# broker = 'test.mosquitto.org'
-# port = 1883
-# topic = "hci_2024"  
-
+# MQTT settings
 broker = '150.140.186.118'
 port = 1883
 topic = "hci_2024"  
-
 client_id = 'rand_id' + str(np.random.randint(0,1000))
 
 
@@ -32,12 +23,12 @@ def connect_mqtt():
     client.connect(broker, port)
     return client
 
-def publish(values, message):
+def mqtt_publish(values, message):
     client = connect_mqtt()
-    # values = [1001,1,1]
     out = ",".join([str(x) for x in values])
-    out+=f",{message}"
+    out += f",{message}"
     client.publish(topic, out)
+
 
 class GUI:
     def __init__(self, width, height, title):
@@ -50,15 +41,16 @@ class GUI:
         self.clock = pg.time.Clock()
 
     def draw(self, img):
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # Convert BGR to RGB
-        img = np.rot90(img)  # Rotate image for proper orientation
-        img = pg.surfarray.make_surface(img)  # Create a surface from the image
-        self.screen.blit(img, (0, 0))  # Blit the image on the screen
-        pg.display.flip()  # Update the display
-        self.clock.tick(60)  # Control the frame rate (60 FPS)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = np.rot90(img)
+        img = pg.surfarray.make_surface(img)
+        self.screen.blit(img, (0, 0))
+        pg.display.flip()
+        self.clock.tick(60)
 
     def close(self):
-        pg.quit()  # Quit pygame
+        pg.quit()
+
 
 class Button:
     def __init__(self, x, y, image, screen):
@@ -78,6 +70,7 @@ class Button:
             if self.rect.collidepoint(event.pos):
                 return True
         return False
+
 
 class Animation:
     def __init__(self, x, y, image, screen):
@@ -111,20 +104,37 @@ class Animation:
             if self.scale_factor <= 0.75:  # When the image reaches its original size, start enlarging
                 self.enlarging = True
 
-def load_images():
-    start_button_image = pg.image.load('start_btn.jpg').convert_alpha()
-    exit_button_image = pg.image.load('exit_btn.jpg').convert_alpha()
-    question_button_image = pg.image.load('question.png').convert_alpha()
-    qr_button_image = pg.image.load('qr.png').convert_alpha()
-    
-    # resize question button and qr button
-    question_button_image = pg.transform.scale(question_button_image, (question_button_image.get_width()//2, question_button_image.get_height()//2))
-    qr_button_image = pg.transform.scale(qr_button_image, (qr_button_image.get_width()//4, qr_button_image.get_height()//4))
-    if not start_button_image or not exit_button_image:
-        print("Error: Could not load images.")
-        exit()
 
-    return start_button_image, exit_button_image, question_button_image, qr_button_image
+def load_images():
+    return {
+        "home_screen": pg.image.load("images/bg.jpg"),
+        "animated_image": pg.image.load('images/hands.png'),
+        "start_button_image": pg.image.load('images/start_btn.jpg'),
+        "exit_button_image": pg.image.load('images/exit_btn.jpg'),
+        "question_button_image": pg.transform.scale(pg.image.load('images/question.png'), (100, 120)),
+        "qr_button_image": pg.transform.scale(pg.image.load('images/qr.png'), (100, 100)),
+        "qr_code_image": pg.transform.scale(pg.image.load("images/scan.png"), (300, 300)),
+        "rock": pg.image.load("images/rock.png"),
+        "rock_lose": pg.image.load("images/rock_lose.png"),
+        "rock_win": pg.image.load("images/rock_win.png"),
+        "paper": pg.image.load("images/paper.png"),
+        "paper_lose": pg.image.load("images/paper_lose.png"),
+        "paper_win": pg.image.load("images/paper_win.png"),
+        "scissors": pg.image.load("images/scissors.png"),
+        "scissors_lose": pg.image.load("images/scissors_lose.png"),
+        "scissors_win": pg.image.load("images/scissors_win.png")
+    }
+
+def open_camera():
+    print("Opening camera...")
+    cap = cv2.VideoCapture(0)
+    if cap.isOpened():
+        print("Camera opened successfully.")
+        return cap
+    
+    print("Error: Could not open camera.")
+    return
+
 
 def show_qr_popup(gui):
     """Show a pop-up window with QR code for the game."""
@@ -140,8 +150,8 @@ def show_qr_popup(gui):
     pg.draw.rect(popup_surface, (50, 100, 200), (0, 0, popup_width, popup_height), width=4, border_radius=20)  # Blue border
     
     # Add QR code image
-    qr_code_image = pg.image.load("scan.png").convert_alpha()
-    qr_code_image = pg.transform.scale(qr_code_image, (300, 300))
+    qr_code_image = images["qr_code_image"]
+
     qr_code_x = (popup_width - qr_code_image.get_width()) // 2
     qr_code_y = (popup_height - qr_code_image.get_height()) // 2
     popup_surface.blit(qr_code_image, (qr_code_x, qr_code_y))
@@ -176,14 +186,12 @@ def show_qr_popup(gui):
                 pop_up_running = False
 
         # Ensure the popup and button remain visible
-        # gui.screen.blit(shadow_surface, (popup_x - 10, popup_y - 10))
         gui.screen.blit(popup_surface, (popup_x, popup_y))
         draw_close_button()
         pg.display.update()
 
     # Close the popup and return to the home screen
     pg.display.update()
-    
     
 def show_instructions_popup(gui):
     """Show a pop-up window with game instructions."""
@@ -199,8 +207,7 @@ def show_instructions_popup(gui):
     pg.draw.rect(popup_surface, (50, 100, 200), (0, 0, popup_width, popup_height), width=4, border_radius=20)  # Blue border
 
     # Add instructions text
-    font_size = 30
-    font = pg.font.Font('font.ttf', font_size)
+    font = pg.font.Font('font.ttf', 30)
     instructions_text = [
         "FOLLOWING THE RULES IS PART OF ANY GAME!",
         " ",
@@ -252,7 +259,6 @@ def show_instructions_popup(gui):
                 pop_up_running = False
 
         # Ensure the popup and button remain visible
-        # gui.screen.blit(shadow_surface, (popup_x - 10, popup_y - 10))
         gui.screen.blit(popup_surface, (popup_x, popup_y))
         draw_close_button()
         pg.display.update()
@@ -260,34 +266,63 @@ def show_instructions_popup(gui):
     # Close the popup and return to the home screen
     pg.display.update()
 
-def home_screen(gui):
-    """Home screen showing the title and buttons."""
-    home_screen = pg.image.load("bg.jpg").convert()
-    start_button_image, exit_button_image, question_button_image, qr_button_image = load_images()
 
-    start_btn = Button(640 - start_button_image.get_width() - 50, 500, start_button_image, gui.screen)
-    exit_btn = Button(640 + 50, 500, exit_button_image, gui.screen)
-    question_btn = Button(1140 , 600, question_button_image, gui.screen)
-    qr_btn = Button(50 , 620, qr_button_image, gui.screen)
+def draw_text(gui, text, pos, font_size):
+    font = pg.font.Font('font.ttf', font_size)
+    text = pg.font.Font.render(font, text, True, (168, 83, 76))
+    gui.screen.blit(text, (int(pos[0]) - text.get_width() // 2, int(pos[1])))
     
-    animated_image = pg.image.load('hands.png').convert_alpha()
-    animation = Animation(640 - animated_image.get_width() // 2, 150, animated_image, gui.screen)  # Position above the buttons
+def draw_camera_feed(gui, frame):
+    # Resize and draw the camera feed
+    frame = cv2.resize(frame, (320, 250))
+    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    frame = np.rot90(frame)
+    camera_surface = pg.surfarray.make_surface(frame)
 
-    running = True
-    while running:
+    camera_x = (gui.width - camera_surface.get_width()) // 2  # Center horizontally
+    camera_y = gui.height - camera_surface.get_height() - 50  # Offset from the bottom
+
+    # Draw border around the camera feed
+    border_rect = pg.Rect(camera_x - 5, camera_y - 5, camera_surface.get_width() + 10, camera_surface.get_height() + 10)
+    pg.draw.rect(gui.screen, (255, 255, 255), border_rect)
+
+    # Draw the camera feed
+    gui.screen.blit(camera_surface, (camera_x, camera_y))
+
+
+def home_screen(gui):
+    """
+    Home screen showing the title and buttons.
+    """
+    # Create home screen buttons 
+    start_btn = Button(640 - images["start_button_image"].get_width() - 50, 500, images["start_button_image"], gui.screen)
+    exit_btn = Button(640 + 50, 500, images["exit_button_image"], gui.screen)
+    question_btn = Button(1140 , 600, images["question_button_image"], gui.screen)
+    qr_btn = Button(50 , 620, images["qr_button_image"], gui.screen)
+    
+    # Create an animated image to display on the home screen 
+    animation = Animation(640 - images["animated_image"].get_width() // 2, 150, images["animated_image"], gui.screen)  # Position above the buttons
+
+    while True:
         mouse_pos = pg.mouse.get_pos()
 
         for event in pg.event.get():
             if event.type == pg.QUIT:
-                running = False
+                return
+            
             if event.type == pg.MOUSEBUTTONDOWN and event.button == 1:
-                if start_btn.is_hovered(mouse_pos):  # Start button clicked
-                    return 'game'
-                elif exit_btn.is_hovered(mouse_pos):  # Exit button clicked
-                    running = False
-                    return 'exit'
+                # Start game
+                if start_btn.is_hovered(mouse_pos):
+                    game_screen(gameplay_gui)
+                    return
+                # Exit
+                elif exit_btn.is_hovered(mouse_pos):
+                    home_gui.close()
+                    return
+                # Instructions
                 elif question_btn.is_hovered(mouse_pos):
                     show_instructions_popup(gui)
+                # QR code
                 elif qr_btn.is_hovered(mouse_pos):
                     show_qr_popup(gui)
                     
@@ -296,226 +331,144 @@ def home_screen(gui):
             else:
                 pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
 
-        
-        gui.screen.blit(home_screen, (0, 0))
-        
-        # Add the title
-        add_title(gui)
-        
+        # Draw home screen components
+        gui.screen.blit(images["home_screen"], (0, 0))
+        draw_text(gui, text="Rock-Paper-Scissors Shoot!", pos=(gui.width // 2, 50), font_size=100)
+
         start_btn.draw()
         exit_btn.draw()
         question_btn.draw()
         qr_btn.draw()
         
-        # Update and draw the animated image
         animation.update()
         animation.draw()
         
+        # Update the display
         pg.display.update()
 
-    return 'exit'
+def game_screen(gui):
+    """
+    Game screen to show webcam feed during the game.
+    """
+    pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
 
-def open_camera(gui):
-    """Open webcam feed and display on the GUI."""
-    cap = cv2.VideoCapture(0)
-    
-    if not cap.isOpened():
-        print("Error: Could not open webcam.")
-        exit()
+    past_gestures, counter = [], 0
+    start_time, last_explicit_time = time.time(), time.time()
+    player_choice, bot_choice = None, None
+    player_score, bot_score = 0, 0
+    added_scores = False
 
     while True:
-        ret, frame = cap.read()
-        if not ret:
-            print("Error: Failed to capture image.")
-            break
-
-        gui.draw(frame)
-
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                gui.close()
-                cap.release()
-                exit()
-
-    cap.release()
-    gui.close()
-
-def game_screen(gui):
-    """Game screen to show webcam feed during the game."""
-    home_screen = pg.image.load("bg.jpg").convert()
-    cap = cv2.VideoCapture(0)
-    
-    pg.mouse.set_cursor(pg.SYSTEM_CURSOR_ARROW)
-    
-    if not cap.isOpened():
-        print("Error: Could not open webcam.")
-        return 'exit'
-
-    running = True
-    counter = 0
-    past_gestures = []
-    start_time = time.time()
-    countdown = 3
-    pTime = 0
-    _bot_choice = None
-    player_choice = None
-    player_score = 0
-    bot_score = 0
-    added_scores = False
-    bot_animation_flag = True
-    last_explicit = time.time()
-    countdown_text = ["Scissors", "Paper", "Rock"]
-    
-    # Load images
-    images = [
-        pg.image.load("rock.png"),
-        pg.image.load("paper.png"),
-        pg.image.load("scissors.png"),
-        pg.image.load("rock_lose.png"),
-        pg.image.load("paper_lose.png"),
-        pg.image.load("scissors_lose.png"),
-        pg.image.load("rock_win.png"),
-        pg.image.load("paper_win.png"),
-        pg.image.load("scissors_win.png")
-    ]
-    
-    # Scale images to fit desired size
-    images = [pg.transform.scale(img, (350, 350)) for img in images]
-
-    # Dictionary to map choices to images
-    rps_choice_images = {
-        "Rock": images[0],
-        "Paper": images[1],
-        "Scissors": images[2],
-        "Rock_lose": images[3],
-        "Paper_lose": images[4],
-        "Scissors_lose": images[5],
-        "Rock_win": images[6],
-        "Paper_win": images[7],
-        "Scissors_win": images[8]
-    }
-
-    while running:
-        
         ret, img = cap.read()
+
         if not ret:
             print("Error: Failed to capture video.")
 
         img = cv2.flip(img, 1)  # Reverse the image horizontally
         
-        img = cc.detector.findHands(img)
-        lmlist = cc.detector.findPosition(img, draw=False)
+        img = utils.detector.find_hands(img)
+        landmarks = utils.detector.find_position(img)
 
         for event in pg.event.get():
             if event.type == pg.QUIT:  # Quit event
-                running = False
+                gameplay_gui.close()
+                cap.release()
+                return
             elif event.type == pg.KEYDOWN:
                 if event.key == pg.K_q:  # Press 'Q' to quit
-                    running = False
+                    gameplay_gui.close()
+                    cap.release()
+                    return
         
-        if len(lmlist) != 0:
+        # Capture the hand landmarks and check for gestures
+        if len(landmarks) != 0:
             counter += 1
-            fingerpos1 = cc.finger_combo(lmlist)
-            cc.fingerlist.append(fingerpos1)
-            past_gestures.append(fingerpos1)
+            finger_pos = utils.finger_combo(landmarks)
+            past_gestures.append(finger_pos)
         else:
             past_gestures.append("Unknown")
         
-        cTime = time.time()
-        fps = 1 / (cTime - pTime)
-        pTime = cTime
-
         # Draw the background
-        gui.screen.blit(home_screen, [0, 0])
+        gui.screen.blit(images["home_screen"], [0, 0])
         
-        # add the title
-        # add_title(gui)
-        
-        # add "vs" title.
-        # add_title(gui, title = "vs", pos = (gui.width//2, gui.height//2+200), font_size=50)
-        
-        # add player and player's score title.
-        add_title(gui, title = "Player's score: ", pos = (gui.width//2 +300, 50), font_size=50)
-        add_title(gui, title = str(player_score), pos = (gui.width//2+500, 50), font_size=50)
+        # Draw the player's and bot's scores
+        draw_text(gui, text=f"Player's score:   {player_score}", pos=(gui.width//2 + 300, 50), font_size=50)
+        draw_text(gui, text=f"Bot's score:   {bot_score}", pos=(gui.width//2 - 400, 50), font_size=50)
 
-        # add player's choice title.
+        current_time = time.time()
         
-        # Display the animation
-        # add_bot_animation(gui, bot_animation_flag)
-        
-        # add bot and bot's score title.
-        add_title(gui, title = "Bot's score: ", pos = (gui.width//2 - 400, 50), font_size=50)
-        add_title(gui, title = str(bot_score), pos = (gui.width//2-200, 50), font_size=50)
-        
-        if time.time() - start_time < countdown:
-            add_title(gui, title = countdown_text[(countdown - int(time.time() - start_time)-1)], pos = (gui.width//2, gui.height//2-100), font_size=100)
-            
+        # Countdown before the game starts (Rock, Paper, Scissors)
+        if current_time - start_time < 1:
+            draw_text(gui, text="Rock", pos=(gui.width//2, gui.height//2-100), font_size=100)
+        elif current_time - start_time < 2:
+            draw_text(gui, text="Paper", pos=(gui.width//2, gui.height//2-100), font_size=100)
+        elif current_time - start_time < 3:
+            draw_text(gui, text="Scissors", pos=(gui.width//2, gui.height//2-100), font_size=100)
+        # Game has started
+        else:
+            # Bot's choice
+            if not bot_choice:
+                bot_choice = utils.bot_choice()
 
-        if time.time() - start_time > countdown:
-            bot_animation_flag = True
-            flag_count = False
-            if not _bot_choice:
-                _bot_choice = cc.bot_choice()
-
+            # Player's choice
             if not player_choice or player_choice == "Unknown" or player_choice == "Explicit":
-                add_title(gui, title = "Shoot!", pos = (gui.width//2, gui.height//2-100), font_size=100)
-                player_choice = cc.check_locked_gesture(past_gestures, limit=5)
+                player_choice = utils.check_locked_gesture(past_gestures, limit=5)
+                draw_text(gui, text="Shoot!", pos=(gui.width//2, gui.height//2-100), font_size=100)
 
             if player_choice and player_choice != "Restart" and player_choice != "Unknown" and player_choice != "Explicit":
-                add_title(gui, title = "VS", pos = (gui.width//2, gui.height//2-100), font_size=100)
-                                   
-                winner = cc.check_winner(player_choice, _bot_choice)
+                draw_text(gui, text = "VS", pos = (gui.width//2, gui.height//2-100), font_size=100)
+                
+                # Check winner
+                winner = utils.check_winner(player_choice, bot_choice)
+
+                # Update scores and publish vibration message
                 if not added_scores:
                     if winner == "Player":
                         player_score += 1
-                        publish([1001], "win")
+                        mqtt_publish([1001], "win")
                     elif winner == "Bot":
-                        publish([1001, 500, 1001], "lose")
+                        mqtt_publish([1001, 500, 1001], "lose")
                         bot_score += 1
                     else:
-                        publish([2000], "draw")
+                        mqtt_publish([2000], "draw")
                     added_scores = True
                     
+                # Display the choices made by the player and bot
                 if winner == "Player":
-                    bot_choice_image = rps_choice_images[_bot_choice+"_lose"]
-                    player_choice_image = rps_choice_images[player_choice+"_win"]
+                    bot_choice_image = images[bot_choice+"_lose"]
+                    player_choice_image = images[player_choice+"_win"]
                     gui.screen.blit(bot_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2 -100, 100))
                     gui.screen.blit(player_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2+700, 100))
-
                 elif winner == "Bot":
-                    bot_choice_image = rps_choice_images[_bot_choice+"_win"]
-                    player_choice_image = rps_choice_images[player_choice+"_lose"]
+                    bot_choice_image = images[bot_choice+"_win"]
+                    player_choice_image = images[player_choice+"_lose"]
                     gui.screen.blit(bot_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2 -100, 100))
                     gui.screen.blit(player_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2+700, 100))
-                    
                 else:
-                    bot_choice_image = rps_choice_images[_bot_choice]
-                    player_choice_image = rps_choice_images[player_choice]
+                    bot_choice_image = images[bot_choice]
+                    player_choice_image = images[player_choice]
                     gui.screen.blit(bot_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2 -100, 100))
                     gui.screen.blit(player_choice_image, (gui.width // 4 - bot_choice_image.get_width() // 2+700, 100))
 
-
-
-        if cc.check_locked_gesture(past_gestures, limit=5) == "Explicit":
+        # Easter Egg!!
+        if utils.check_locked_gesture(past_gestures, limit=5) == "Explicit":
 
             explicit = cv2.imread("explicit.png")
-            if time.time() - last_explicit > 1.3:
-                # print("sent explicit"+ str(time.time()))
-                last_explicit = time.time()
-                publish([1001, 1, 1], "explicit")
+            if current_time - last_explicit_time > 1.3:
+                last_explicit_time = current_time
+                mqtt_publish([1001, 1, 1], "explicit")
+
             try:
-                finger_size = np.sqrt((lmlist[12][1]- lmlist[9][1])**2 + (lmlist[12][2]- lmlist[9][2])**2)
+                finger_size = np.sqrt((landmarks[12][1]- landmarks[9][1])**2 + (landmarks[12][2]- landmarks[9][2])**2)
             except IndexError:
                 finger_size = 100
-                # print("error")
+
             scale_factor = explicit.shape[0] / finger_size
             explicit_size = [int(explicit.shape[1] / scale_factor), int(explicit.shape[0] / scale_factor)]
-            # explicit_size = [120, 75]
-            
             explicit = cv2.resize(explicit, explicit_size)
 
             try:
-                coords = lmlist[11][1], lmlist[11][2]
+                coords = landmarks[11][1], landmarks[11][2]
                 coords = [int(coords[0] - explicit_size[0]//2), int(coords[1] - explicit_size[1]//2)]
                 x, y = coords[0], coords[1]
                 y_limit_high = min(y+explicit_size[1], img.shape[0])
@@ -526,110 +479,32 @@ def game_screen(gui):
             except:
                 pass
         
-        if cc.check_locked_gesture(past_gestures, limit=5) == "Restart":
-            _bot_choice = None
+        # Restart the game if the player makes a rock-on gesture
+        if utils.check_locked_gesture(past_gestures, limit=5) == "Restart":
+            bot_choice = None
             player_choice = None
             added_scores = False
-            start_time = time.time()
+            start_time = current_time
             past_gestures = []
             counter = 0
-            fingerlist = []
-            inputlist = []
-            bot_animation_flag = True
 
 
         # Display the webcam feed
         img = cv2.flip(img, 1)  # Reverse the image horizontally
-        add_camera(gui, img)
+        draw_camera_feed(gui, img)
         
-        # Display bot choice
-        
-
+        # Update the display
         pg.display.update()
-
-    cap.release()
-    return 'exit'
-
-def add_title(gui, title="Rock-Paper-Scissors Shoot!", pos = [640, 50], font_size=100):
-    font = pg.font.Font('font.ttf', font_size)
-    text = pg.font.Font.render(font, title, True, (168, 83, 76))
-    gui.screen.blit(text, (int(pos[0]) - text.get_width() // 2, int(pos[1])))
-    
-def add_camera(gui, frame):
-    # Resize and draw the camera feed
-    frame = cv2.resize(frame, (320, 250))  # Resize the frame
-    frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    frame = np.rot90(frame)
-    camera_surface = pg.surfarray.make_surface(frame)
-
-    camera_x = (gui.width - camera_surface.get_width()) // 2  # Center horizontally
-    camera_y = gui.height - camera_surface.get_height() - 50  # Offset from the bottom
-
-    draw_border(gui, camera_surface, camera_x, camera_y)
-
-    # Draw the camera feed
-    gui.screen.blit(camera_surface, (camera_x, camera_y))
-
-def draw_border(gui, camera_surface, camera_x, camera_y):
-    # Draw border around the camera feed
-    border_rect = pg.Rect(camera_x - 5, camera_y - 5, camera_surface.get_width() + 10, camera_surface.get_height() + 10)
-    pg.draw.rect(gui.screen, (255, 255, 255), border_rect)
-
-def add_bot_animation(gui, flag = False):
-    """Show three images sequentially every 1 second."""
-    
-    if flag:
-
-        # Load images
-        images = [
-            pg.image.load("rock.png"),
-            pg.image.load("paper.png"),
-            pg.image.load("scissors.png")
-        ]
-
-        # Scale images to fit desired size
-        images = [pg.transform.scale(img, (300, 300)) for img in images]
-
-        # Determine the current image based on time
-        elapsed_time = pg.time.get_ticks() // 500  # Convert milliseconds to seconds
-        current_image = elapsed_time % len(images)  # Cycle through the images
-
-        
-        # Draw the current image
-        bot_x = gui.width // 4 - images[current_image].get_width() // 2
-        bot_y = 200
-        gui.screen.blit(images[current_image], (bot_x, bot_y))
-        
-    
-    
-def add_score(winner):
-    if winner == "Player":
-        player_score += 1
-    elif winner == "Bot":
-        bot_score += 1
-
-    return player_score, bot_score
-
-def main():
-    home_gui = GUI(1280, 720, "Rock-Paper-Scissors Shoot!")
-    gameplay_gui = GUI(1280, 720, "Rock-Paper-Scissors Shoot!")
-
-    screen_status = 'home'
-
-    if screen_status == 'home':
-        screen_status = home_screen(home_gui)
-    
-    if screen_status == 'game':
-        game_screen(gameplay_gui)
-    
-    elif screen_status == 'exit':
-        home_gui.close()
-        
-    elif screen_status == 'question':
-        # pop up window with instructions
-        print("question mark clicked")        
-        screen_status = home_screen(home_gui)   
 
 
 if __name__ == "__main__":
-    main()
+    # Load images and open the camera
+    images = load_images()
+    cap = open_camera()
+
+    # Create GUI objects for the home and gameplay screens
+    home_gui = GUI(1280, 720, "Rock-Paper-Scissors Shoot!")
+    gameplay_gui = GUI(1280, 720, "Rock-Paper-Scissors Shoot!")
+
+    # Start the game by displaying the home screen
+    home_screen(home_gui)
